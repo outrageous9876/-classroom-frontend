@@ -1,63 +1,163 @@
 import type { AuthProvider } from "@refinedev/core";
-
-const AUTH_KEY = "classroom-auth-email";
+import { User, SignUpPayload } from "@/types";
+import { authClient } from "@/lib/auth-client";
 
 export const authProvider: AuthProvider = {
-  login: async ({ email }) => {
-    if (email) {
-      localStorage.setItem(AUTH_KEY, email);
-      return { success: true, redirectTo: "/" };
-    }
+  register: async ({
+    email,
+    password,
+    name,
+    role,
+    image,
+    imageCldPubId,
+  }: SignUpPayload) => {
+    try {
+      const { data, error } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        image,
+        role,
+        imageCldPubId,
+      } as SignUpPayload);
 
-    return {
-      success: false,
-      error: {
-        name: "Login failed",
-        message: "Invalid email or password",
-      },
-    };
+      if (error) {
+        return {
+          success: false,
+          error: {
+            name: "Registration failed",
+            message:
+              error?.message || "Unable to create account. Please try again.",
+          },
+        };
+      }
+
+      // Store user data
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      return {
+        success: true,
+        redirectTo: "/",
+      };
+    } catch (error) {
+      console.error("Register error:", error);
+      return {
+        success: false,
+        error: {
+          name: "Registration failed",
+          message: "Unable to create account. Please try again.",
+        },
+      };
+    }
   },
-  register: async ({ email }) => {
-    if (email) {
-      localStorage.setItem(AUTH_KEY, email);
-      return { success: true, redirectTo: "/" };
-    }
+  login: async ({ email, password }) => {
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email: email,
+        password: password,
+      });
 
-    return {
-      success: false,
-      error: {
-        name: "Register failed",
-        message: "Invalid email or password",
-      },
-    };
+      if (error) {
+        console.error("Login error from auth client:", error);
+        return {
+          success: false,
+          error: {
+            name: "Login failed",
+            message: error?.message || "Please try again later.",
+          },
+        };
+      }
+
+      // Store user data
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      return {
+        success: true,
+        redirectTo: "/",
+      };
+    } catch (error) {
+      console.error("Login exception:", error);
+      return {
+        success: false,
+        error: {
+          name: "Login failed",
+          message: "Please try again later.",
+        },
+      };
+    }
   },
   logout: async () => {
-    localStorage.removeItem(AUTH_KEY);
-    return { success: true, redirectTo: "/login" };
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      console.error("Logout error:", error);
+      return {
+        success: false,
+        error: {
+          name: "Logout failed",
+          message: "Unable to log out. Please try again.",
+        },
+      };
+    }
+
+    localStorage.removeItem("user");
+
+    return {
+      success: true,
+      redirectTo: "/login",
+    };
   },
   onError: async (error) => {
+    if (error.response?.status === 401) {
+      return {
+        logout: true,
+      };
+    }
+
     return { error };
   },
   check: async () => {
-    const email = localStorage.getItem(AUTH_KEY);
+    const user = localStorage.getItem("user");
 
-    if (email) {
-      return { authenticated: true };
+    if (user) {
+      return {
+        authenticated: true,
+      };
     }
 
     return {
       authenticated: false,
+      logout: true,
       redirectTo: "/login",
+      error: {
+        name: "Unauthorized",
+        message: "Check failed",
+      },
     };
   },
-  getPermissions: async () => null,
+  getPermissions: async () => {
+    const user = localStorage.getItem("user");
+
+    if (!user) return null;
+    const parsedUser: User = JSON.parse(user);
+
+    return {
+      role: parsedUser.role,
+    };
+  },
   getIdentity: async () => {
-    const email = localStorage.getItem(AUTH_KEY);
+    const user = localStorage.getItem("user");
 
-    if (!email) {
-      return null;
-    }
+    if (!user) return null;
+    const parsedUser: User = JSON.parse(user);
 
-    return { id: email, name: email, email };
+    return {
+      id: parsedUser.id,
+      name: parsedUser.name,
+      email: parsedUser.email,
+      image: parsedUser.image,
+      role: parsedUser.role,
+      imageCldPubId: parsedUser.imageCldPubId,
+    };
   },
 };
