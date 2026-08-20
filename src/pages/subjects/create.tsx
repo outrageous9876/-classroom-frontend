@@ -1,4 +1,6 @@
 import { useForm } from "@refinedev/react-hook-form";
+import { useSelect } from "@refinedev/core";
+import { Controller } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +15,10 @@ import {
 } from "@/components/ui/select";
 import { CreateView, CreateViewHeader } from "@/components/refine-ui/views/create-view";
 
-import { DEPARTMENT_OPTIONS } from "@/constants";
-
 type SubjectFormValues = {
   code: string;
   name: string;
-  department: string;
+  departmentId: number | null;
   description?: string;
 };
 
@@ -27,16 +27,22 @@ const SubjectCreatePage = () => {
     refineCore: { onFinish },
     register,
     handleSubmit,
-    watch,
-    setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SubjectFormValues>({
     refineCoreProps: {
       resource: "subjects",
     },
+    defaultValues: {
+      departmentId: null,
+    },
   });
 
-  const department = watch("department");
+  const { options: departmentOptions } = useSelect({
+    resource: "departments",
+    optionLabel: "name",
+    optionValue: "id",
+  });
 
   return (
     <CreateView>
@@ -75,24 +81,36 @@ const SubjectCreatePage = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="department">Department</Label>
-          <Select
-            value={department}
-            onValueChange={(value) =>
-              setValue("department", value, { shouldValidate: true })
-            }
-          >
-            <SelectTrigger id="department">
-              <SelectValue placeholder="Select a department" />
-            </SelectTrigger>
-            <SelectContent>
-              {DEPARTMENT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="departmentId">Department</Label>
+          <Controller
+            name="departmentId"
+            control={control}
+            rules={{ required: "Department is required" }}
+            render={({ field }) => (
+              <Select
+                value={field.value ? String(field.value) : ""}
+                onValueChange={(value) =>
+                  field.onChange(value ? Number(value) : null)
+                }
+              >
+                <SelectTrigger id="departmentId">
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentOptions.map((option) => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.departmentId && (
+            <p className="text-sm text-destructive">
+              {String(errors.departmentId.message)}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
