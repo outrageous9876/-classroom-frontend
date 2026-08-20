@@ -3,14 +3,34 @@ import { User, SignUpPayload } from "@/types";
 import { authClient } from "@/lib/auth-client";
 
 export const authProvider: AuthProvider = {
-  register: async ({
-    email,
-    password,
-    name,
-    role,
-    image,
-    imageCldPubId,
-  }: SignUpPayload) => {
+  register: async (params) => {
+    // Handle social sign-up (Google/GitHub)
+    if ("providerName" in params && params.providerName) {
+      try {
+        await authClient.signIn.social({
+          provider: params.providerName,
+          callbackURL: "/",
+        });
+
+        return {
+          success: true,
+        };
+      } catch (error) {
+        console.error("Social register error:", error);
+        return {
+          success: false,
+          error: {
+            name: "Registration failed",
+            message: "Unable to sign up with provider. Please try again.",
+          },
+        };
+      }
+    }
+
+    // Email/password sign-up
+    const { email, password, name, role, image, imageCldPubId } =
+      params as SignUpPayload;
+
     try {
       const { data, error } = await authClient.signUp.email({
         name,
@@ -50,11 +70,37 @@ export const authProvider: AuthProvider = {
       };
     }
   },
-  login: async ({ email, password }) => {
+  login: async (params) => {
+    // Handle social sign-in (Google/GitHub)
+    if ("providerName" in params && params.providerName) {
+      try {
+        await authClient.signIn.social({
+          provider: params.providerName,
+          callbackURL: "/",
+        });
+
+        return {
+          success: true,
+        };
+      } catch (error) {
+        console.error("Social login error:", error);
+        return {
+          success: false,
+          error: {
+            name: "Login failed",
+            message: "Unable to sign in with provider. Please try again.",
+          },
+        };
+      }
+    }
+
+    // Email/password sign-in
+    const { email, password } = params as { email: string; password: string };
+
     try {
       const { data, error } = await authClient.signIn.email({
-        email: email,
-        password: password,
+        email,
+        password,
       });
 
       if (error) {

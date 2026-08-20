@@ -1,4 +1,5 @@
 import { useForm } from "@refinedev/react-hook-form";
+import { useSelect } from "@refinedev/core";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,10 @@ import {
 } from "@/components/ui/select";
 import { CreateView, CreateViewHeader } from "@/components/refine-ui/views/create-view";
 
-import { DEPARTMENT_OPTIONS } from "@/constants";
-
 type SubjectFormValues = {
   code: string;
   name: string;
-  department: string;
+  departmentId: number;
   description?: string;
 };
 
@@ -36,7 +35,13 @@ const SubjectCreatePage = () => {
     },
   });
 
-  const department = watch("department");
+  const { options: departmentOptions } = useSelect({
+    resource: "departments",
+    optionLabel: "name",
+    optionValue: "id",
+  });
+
+  const departmentId = watch("departmentId");
 
   return (
     <CreateView>
@@ -75,24 +80,29 @@ const SubjectCreatePage = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="departmentId">Department</Label>
           <Select
-            value={department}
+            value={departmentId ? String(departmentId) : undefined}
             onValueChange={(value) =>
-              setValue("department", value, { shouldValidate: true })
+              setValue("departmentId", Number(value), { shouldValidate: true })
             }
           >
-            <SelectTrigger id="department">
+            <SelectTrigger id="departmentId">
               <SelectValue placeholder="Select a department" />
             </SelectTrigger>
             <SelectContent>
-              {DEPARTMENT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+              {departmentOptions.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {errors.departmentId && (
+            <p className="text-sm text-destructive">
+              {String(errors.departmentId.message)}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
