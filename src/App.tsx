@@ -12,7 +12,7 @@ import "./App.css";
 import { Toaster } from "./components/refine-ui/notification/toaster";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
-import { BookOpen, Home } from "lucide-react";
+import { BookOpen, Home, Layers } from "lucide-react";
 import SubjectsList from "./pages/subjects/list";
 import { Layout } from "./components/refine-ui/layout/layout";
 import SubjectsCreate from "./pages/subjects/create";
@@ -23,6 +23,10 @@ import { dataProvider } from "./providers/data";
 import { authProvider } from "./providers/auth";
 import { Login } from "./pages/login";
 import { Register } from "./pages/register";
+
+import ClassesList from "./pages/classes/list";
+import ClassesCreate from "./pages/classes/create";
+import ClassesShow from "./pages/classes/show";
 
 // TODO: classes, departments, faculty, and enrollments pages haven't been
 // built yet. Re-add their imports, resources, and routes below once they
@@ -63,6 +67,16 @@ function App() {
                     icon: <BookOpen />,
                   },
                 },
+                {
+                name: "classes",
+                list: "/classes",
+                create: "/classes/create",
+                show: "/classes/show/:id",
+                meta: {
+                  label: "Classes",
+                  icon: <Layers />,
+                },
+              },
               ]}
             >
               <Routes>
@@ -93,6 +107,11 @@ function App() {
                     <Route path="create" element={<SubjectsCreate />} />
                     <Route path="show/:id" element={<SubjectsShow />} />
                   </Route>
+                  <Route path="classes">
+                  <Route index element={<ClassesList />} />
+                  <Route path="create" element={<ClassesCreate />} />
+                  <Route path="show/:id" element={<ClassesShow />} />
+                </Route>
                 </Route>
               </Routes>
 
