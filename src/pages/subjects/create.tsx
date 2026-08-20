@@ -18,7 +18,7 @@ import { CreateView, CreateViewHeader } from "@/components/refine-ui/views/creat
 type SubjectFormValues = {
   code: string;
   name: string;
-  departmentId: number;
+  departmentId: number | null;
   description?: string;
 };
 
@@ -32,6 +32,9 @@ const SubjectCreatePage = () => {
   } = useForm<SubjectFormValues>({
     refineCoreProps: {
       resource: "subjects",
+    },
+    defaultValues: {
+      departmentId: null,
     },
   });
 
@@ -85,8 +88,10 @@ const SubjectCreatePage = () => {
             rules={{ required: "Department is required" }}
             render={({ field }) => (
               <Select
-                value={field.value ? String(field.value) : undefined}
-                onValueChange={(value) => field.onChange(Number(value))}
+                value={field.value ? String(field.value) : ""}
+                onValueChange={(value) =>
+                  field.onChange(value ? Number(value) : null)
+                }
               >
                 <SelectTrigger id="departmentId">
                   <SelectValue placeholder="Select a department" />
