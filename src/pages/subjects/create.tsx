@@ -1,5 +1,6 @@
 import { useForm } from "@refinedev/react-hook-form";
 import { useSelect } from "@refinedev/core";
+import { Controller } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +27,7 @@ const SubjectCreatePage = () => {
     refineCore: { onFinish },
     register,
     handleSubmit,
-    watch,
-    setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SubjectFormValues>({
     refineCoreProps: {
@@ -40,8 +40,6 @@ const SubjectCreatePage = () => {
     optionLabel: "name",
     optionValue: "id",
   });
-
-  const departmentId = watch("departmentId");
 
   return (
     <CreateView>
@@ -81,23 +79,28 @@ const SubjectCreatePage = () => {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="departmentId">Department</Label>
-          <Select
-            value={departmentId ? String(departmentId) : undefined}
-            onValueChange={(value) =>
-              setValue("departmentId", Number(value), { shouldValidate: true })
-            }
-          >
-            <SelectTrigger id="departmentId">
-              <SelectValue placeholder="Select a department" />
-            </SelectTrigger>
-            <SelectContent>
-              {departmentOptions.map((option) => (
-                <SelectItem key={option.value} value={String(option.value)}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Controller
+            name="departmentId"
+            control={control}
+            rules={{ required: "Department is required" }}
+            render={({ field }) => (
+              <Select
+                value={field.value ? String(field.value) : undefined}
+                onValueChange={(value) => field.onChange(Number(value))}
+              >
+                <SelectTrigger id="departmentId">
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentOptions.map((option) => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.departmentId && (
             <p className="text-sm text-destructive">
               {String(errors.departmentId.message)}

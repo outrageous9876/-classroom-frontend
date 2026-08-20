@@ -4,17 +4,13 @@ import { authClient } from "@/lib/auth-client";
 
 export const authProvider: AuthProvider = {
   register: async (params) => {
-    // Handle social sign-up (Google/GitHub)
     if ("providerName" in params && params.providerName) {
       try {
         await authClient.signIn.social({
           provider: params.providerName,
-          callbackURL: "/",
+          callbackURL: `${window.location.origin}/`,
         });
-
-        return {
-          success: true,
-        };
+        return { success: true };
       } catch (error) {
         console.error("Social register error:", error);
         return {
@@ -27,8 +23,7 @@ export const authProvider: AuthProvider = {
       }
     }
 
-    // Email/password sign-up
-    const { email, password, name, role, image, imageCldPubId } =
+    const { email, password, name, image, imageCldPubId } =
       params as SignUpPayload;
 
     try {
@@ -37,7 +32,6 @@ export const authProvider: AuthProvider = {
         email,
         password,
         image,
-        role,
         imageCldPubId,
       } as SignUpPayload);
 
@@ -52,13 +46,9 @@ export const authProvider: AuthProvider = {
         };
       }
 
-      // Store user data
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      return {
-        success: true,
-        redirectTo: "/",
-      };
+      return { success: true, redirectTo: "/" };
     } catch (error) {
       console.error("Register error:", error);
       return {
@@ -71,17 +61,13 @@ export const authProvider: AuthProvider = {
     }
   },
   login: async (params) => {
-    // Handle social sign-in (Google/GitHub)
     if ("providerName" in params && params.providerName) {
       try {
         await authClient.signIn.social({
           provider: params.providerName,
-          callbackURL: "/",
+          callbackURL: `${window.location.origin}/`,
         });
-
-        return {
-          success: true,
-        };
+        return { success: true };
       } catch (error) {
         console.error("Social login error:", error);
         return {
@@ -94,7 +80,6 @@ export const authProvider: AuthProvider = {
       }
     }
 
-    // Email/password sign-in
     const { email, password } = params as { email: string; password: string };
 
     try {
@@ -114,13 +99,9 @@ export const authProvider: AuthProvider = {
         };
       }
 
-      // Store user data
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      return {
-        success: true,
-        redirectTo: "/",
-      };
+      return { success: true, redirectTo: "/" };
     } catch (error) {
       console.error("Login exception:", error);
       return {
@@ -148,27 +129,30 @@ export const authProvider: AuthProvider = {
 
     localStorage.removeItem("user");
 
-    return {
-      success: true,
-      redirectTo: "/login",
-    };
+    return { success: true, redirectTo: "/login" };
   },
   onError: async (error) => {
     if (error.response?.status === 401) {
-      return {
-        logout: true,
-      };
+      return { logout: true };
     }
-
     return { error };
   },
   check: async () => {
-    const user = localStorage.getItem("user");
+    const cachedUser = localStorage.getItem("user");
 
-    if (user) {
-      return {
-        authenticated: true,
-      };
+    if (cachedUser) {
+      return { authenticated: true };
+    }
+
+    try {
+      const { data } = await authClient.getSession();
+
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        return { authenticated: true };
+      }
+    } catch (error) {
+      console.error("Session check error:", error);
     }
 
     return {
@@ -182,17 +166,31 @@ export const authProvider: AuthProvider = {
     };
   },
   getPermissions: async () => {
-    const user = localStorage.getItem("user");
+    let user = localStorage.getItem("user");
+
+    if (!user) {
+      const { data } = await authClient.getSession();
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        user = JSON.stringify(data.user);
+      }
+    }
 
     if (!user) return null;
     const parsedUser: User = JSON.parse(user);
 
-    return {
-      role: parsedUser.role,
-    };
+    return { role: parsedUser.role };
   },
   getIdentity: async () => {
-    const user = localStorage.getItem("user");
+    let user = localStorage.getItem("user");
+
+    if (!user) {
+      const { data } = await authClient.getSession();
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        user = JSON.stringify(data.user);
+      }
+    }
 
     if (!user) return null;
     const parsedUser: User = JSON.parse(user);

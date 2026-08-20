@@ -55,7 +55,6 @@ export const SignUpForm = () => {
       name,
       email,
       password,
-      role: "student",
     });
   };
 
