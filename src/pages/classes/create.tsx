@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Subject, User, UploadWidgetValue } from "@/types";
 import {
   Form,
   FormControl,
@@ -28,7 +29,6 @@ import { useBack, useList } from "@refinedev/core";
 import { Loader2 } from "lucide-react";
 import { classSchema } from "@/lib/schema";
 import UploadWidget from "@/components/upload-widget";
-import { Subject, User } from "@/types";
 import z from "zod";
 
 
@@ -135,7 +135,7 @@ const ClassesCreate = () => {
                                 }
                               : null
                           }
-                          onChange={(file: { url: any; publicId: any } | null) => {
+                          onChange={(file: UploadWidgetValue | null) => {
                             if (file) {
                               field.onChange(file.url);
                               form.setValue("bannerCldPubId", file.publicId, {
@@ -328,7 +328,7 @@ const ClassesCreate = () => {
 
                 <Separator />
 
-                <Button type="submit" size="lg" className="w-full">
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <div className="flex gap-1">
                       <span>Creating Class...</span>
