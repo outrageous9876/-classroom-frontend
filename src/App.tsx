@@ -18,7 +18,7 @@ import { Layout } from "./components/refine-ui/layout/layout";
 import SubjectsCreate from "./pages/subjects/create";
 import SubjectsShow from "./pages/subjects/show";
 import Dashboard from "./pages/dashboard";
-
+import ClassesEdit from "./pages/classes/edit";
 import { dataProvider } from "./providers/data";
 import { authProvider } from "./providers/auth";
 import { Login } from "./pages/login";
@@ -67,10 +67,11 @@ function App() {
                     icon: <BookOpen />,
                   },
                 },
-                {
+               {
                 name: "classes",
                 list: "/classes",
                 create: "/classes/create",
+                edit: "/classes/edit/:id",
                 show: "/classes/show/:id",
                 meta: {
                   label: "Classes",
@@ -107,11 +108,12 @@ function App() {
                     <Route path="create" element={<SubjectsCreate />} />
                     <Route path="show/:id" element={<SubjectsShow />} />
                   </Route>
-                  <Route path="classes">
-                  <Route index element={<ClassesList />} />
-                  <Route path="create" element={<ClassesCreate />} />
-                  <Route path="show/:id" element={<ClassesShow />} />
-                </Route>
+                 <Route path="classes">
+                <Route index element={<ClassesList />} />
+                <Route path="create" element={<ClassesCreate />} />
+                <Route path="edit/:id" element={<ClassesEdit />} />
+                <Route path="show/:id" element={<ClassesShow />} />
+              </Route>
                 </Route>
               </Routes>
 
