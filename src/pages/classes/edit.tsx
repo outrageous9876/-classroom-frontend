@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Subject, User, UploadWidgetValue } from "@/types";
 import {
   Form,
   FormControl,
@@ -23,32 +22,54 @@ import {
 
 import { CreateView } from "@/components/refine-ui/views/create-view";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
-import { useBack, useList, useNotification } from "@refinedev/core";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles } from "lucide-react";
-import { classSchema } from "@/lib/schema";
-import UploadWidget from "@/components/upload-widget";
-import { useGenerateDescription } from "@/hooks/use-generate-description";
-import z from "zod";
 
-const ClassesCreate = () => {
+import { Textarea } from "@/components/ui/textarea";
+import { useBack } from "@refinedev/core";
+import { Loader2 } from "lucide-react";
+import UploadWidget from "@/components/upload-widget";
+import { UploadWidgetValue } from "@/types";
+import { z } from "zod";
+
+// Only fields that make sense to edit after creation — matches the
+// backend's PUT /classes/:id, which intentionally excludes subjectId,
+// teacherId, and inviteCode.
+const classEditSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Class name must be at least 2 characters")
+    .max(50, "Class name must be at most 50 characters"),
+  description: z
+    .string({ required_error: "Description is required" })
+    .min(5, "Description must be at least 5 characters"),
+  capacity: z.coerce
+    .number({
+      required_error: "Capacity is required",
+      invalid_type_error: "Capacity is required",
+    })
+    .int("Capacity must be a whole number")
+    .min(1, "Capacity must be at least 1"),
+  status: z.enum(["active", "inactive"]),
+  bannerUrl: z
+    .string({ required_error: "Class banner is required" })
+    .min(1, "Class banner is required"),
+  bannerCldPubId: z
+    .string({ required_error: "Banner reference is required" })
+    .min(1, "Banner reference is required"),
+});
+
+const ClassesEdit = () => {
   const back = useBack();
-  const { open } = useNotification();
-  const { generateDescription, isGenerating } = useGenerateDescription();
 
   const form = useForm({
-    resolver: zodResolver(classSchema),
+    resolver: zodResolver(classEditSchema),
     refineCoreProps: {
       resource: "classes",
-      action: "create",
-    },
-    defaultValues: {
-      status: "active",
+      action: "edit",
     },
   });
 
   const {
-    refineCore: { onFinish },
+    refineCore: { onFinish, query },
     handleSubmit,
     formState: { isSubmitting, errors },
     control,
@@ -56,79 +77,30 @@ const ClassesCreate = () => {
 
   const bannerPublicId = form.watch("bannerCldPubId");
 
-  const onSubmit = async (values: z.infer<typeof classSchema>) => {
+  const onSubmit = async (values: z.infer<typeof classEditSchema>) => {
     try {
-      const result = await onFinish(values);
-      const inviteCode = (result as any)?.data?.inviteCode;
-
-      if (inviteCode) {
-        open?.({
-          type: "success",
-          message: "Class created!",
-          description: `Invite code: ${inviteCode} — share this with your students.`,
-        });
-      }
+      await onFinish(values);
     } catch (error) {
-      console.error("Error creating class:", error);
+      console.error("Error updating class:", error);
     }
   };
 
-  // Fetch subjects list
-  const { query: subjectsQuery } = useList<Subject>({
-    resource: "subjects",
-    pagination: {
-      pageSize: 100,
-    },
-  });
-
-  // Fetch teachers list
-  const { query: teachersQuery } = useList<User>({
-    resource: "users",
-    filters: [
-      {
-        field: "role",
-        operator: "eq",
-        value: "teacher",
-      },
-    ],
-    pagination: {
-      pageSize: 100,
-    },
-  });
-
-  const teachers = teachersQuery.data?.data || [];
-  const teachersLoading = teachersQuery.isLoading;
-
-  const subjects = subjectsQuery.data?.data || [];
-  const subjectsLoading = subjectsQuery.isLoading;
-
-  const selectedSubjectId = form.watch("subjectId");
-  const selectedSubject = subjects.find(
-    (subject) => subject.id === selectedSubjectId
-  );
-
-  const handleGenerateDescription = async () => {
-    const description = await generateDescription({
-      type: "class",
-      name: form.getValues("name") ?? "",
-      context: selectedSubject?.name,
-    });
-
-    if (description) {
-      form.setValue("description", description, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    }
-  };
+  if (query?.isLoading) {
+    return (
+      <CreateView className="class-view">
+        <Breadcrumb />
+        <p className="state-message">Loading class...</p>
+      </CreateView>
+    );
+  }
 
   return (
     <CreateView className="class-view">
       <Breadcrumb />
 
-      <h1 className="page-title">Create a Class</h1>
+      <h1 className="page-title">Edit Class</h1>
       <div className="intro-row">
-        <p>Provide the required information below to add a class.</p>
+        <p>Update the details for this class.</p>
         <Button onClick={() => back()}>Go Back</Button>
       </div>
 
@@ -138,7 +110,7 @@ const ClassesCreate = () => {
         <Card className="class-form-card">
           <CardHeader className="relative z-10">
             <CardTitle className="text-2xl pb-0 font-bold text-gradient-orange">
-              Fill out form
+              Update details
             </CardTitle>
           </CardHeader>
 
@@ -214,75 +186,6 @@ const ClassesCreate = () => {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <FormField
                     control={control}
-                    name="subjectId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Subject <span className="text-orange-600">*</span>
-                        </FormLabel>
-                        <Select
-                          onValueChange={(value) =>
-                            field.onChange(Number(value))
-                          }
-                          value={field.value?.toString()}
-                          disabled={subjectsLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a subject" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {subjects.map((subject) => (
-                              <SelectItem
-                                key={subject.id}
-                                value={subject.id.toString()}
-                              >
-                                {subject.name} ({subject.code})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="teacherId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Teacher <span className="text-orange-600">*</span>
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value?.toString()}
-                          disabled={teachersLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a teacher" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {teachers.map((teacher) => (
-                              <SelectItem key={teacher.id} value={teacher.id}>
-                                {teacher.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={control}
                     name="capacity"
                     render={({ field }) => (
                       <FormItem>
@@ -342,26 +245,9 @@ const ClassesCreate = () => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>
-                          Description{" "}
-                          <span className="text-orange-600">*</span>
-                        </FormLabel>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleGenerateDescription}
-                          disabled={isGenerating}
-                        >
-                          {isGenerating ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-3.5 w-3.5" />
-                          )}
-                          Generate with AI ✨
-                        </Button>
-                      </div>
+                      <FormLabel>
+                        Description <span className="text-orange-600">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Brief description about the class"
@@ -378,11 +264,11 @@ const ClassesCreate = () => {
                 <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <div className="flex gap-1">
-                      <span>Creating Class...</span>
+                      <span>Saving Changes...</span>
                       <Loader2 className="inline-block ml-2 animate-spin" />
                     </div>
                   ) : (
-                    "Create Class"
+                    "Save Changes"
                   )}
                 </Button>
               </form>
@@ -394,4 +280,4 @@ const ClassesCreate = () => {
   );
 };
 
-export default ClassesCreate;
+export default ClassesEdit;

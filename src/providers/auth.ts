@@ -23,7 +23,7 @@ export const authProvider: AuthProvider = {
       }
     }
 
-    const { email, password, name, image, imageCldPubId } =
+    const { email, password, name, image, imageCldPubId, role } =
       params as SignUpPayload;
 
     try {
@@ -33,6 +33,7 @@ export const authProvider: AuthProvider = {
         password,
         image,
         imageCldPubId,
+        role,
       } as SignUpPayload);
 
       if (error) {

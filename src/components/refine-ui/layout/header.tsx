@@ -2,7 +2,9 @@ import {
   useRefineOptions,
   useActiveAuthProvider,
   useLogout,
+  useGetIdentity,
 } from "@refinedev/core";
+import { useNavigate } from "react-router";
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -12,8 +14,9 @@ import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/refine-ui/theme/theme-toggle";
 import { UserAvatar } from "@/components/refine-ui/layout/user-avatar";
 import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { User } from "@/types";
 
 export const Header = () => {
   const { isMobile } = useSidebar();
@@ -119,6 +122,8 @@ function MobileHeader() {
 
 const UserDropdown = () => {
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
+  const { data: identity } = useGetIdentity<User>();
+  const navigate = useNavigate();
 
   const authProvider = useActiveAuthProvider();
 
@@ -132,6 +137,16 @@ const UserDropdown = () => {
         <UserAvatar />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => {
+            if (identity?.id) {
+              navigate(`/users/show/${identity.id}`);
+            }
+          }}
+        >
+          <UserIcon />
+          <span>View Profile</span>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             logout();
