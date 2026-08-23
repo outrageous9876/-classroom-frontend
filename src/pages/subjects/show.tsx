@@ -16,7 +16,7 @@ const SubjectShowPage = () => {
 
   return (
     <ShowView>
-      <ShowViewHeader />
+      <ShowViewHeader canEdit={false} />
 
       <Card>
         <CardHeader>

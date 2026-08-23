@@ -17,7 +17,7 @@ const DepartmentShowPage = () => {
   if (isLoading || isError || !department) {
     return (
       <ShowView>
-        <ShowViewHeader />
+        <ShowViewHeader canEdit={false} />
         <p className="state-message">
           {isLoading
             ? "Loading department details..."
@@ -31,7 +31,7 @@ const DepartmentShowPage = () => {
 
   return (
     <ShowView>
-      <ShowViewHeader />
+      <ShowViewHeader canEdit={false} />
 
       <Card>
         <CardHeader>

@@ -1,7 +1,8 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGetIdentity } from "@refinedev/core";
 import { useTable } from "@refinedev/react-table";
-import { ColumnDef } from "@tanstack/react-table";
+import { CellContext, ColumnDef } from "@tanstack/react-table";
 
 import {
   Select,
@@ -31,9 +32,17 @@ const roleBadgeVariant = (role: UserRole) => {
   return "outline";
 };
 
+const CAN_VIEW_EMAIL_ROLES = new Set<UserRole>([
+  UserRole.ADMIN,
+  UserRole.TEACHER,
+]);
+
 const UserListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("all");
+
+  const { data: identity } = useGetIdentity<User>();
+  const canViewEmail = !!identity && CAN_VIEW_EMAIL_ROLES.has(identity.role);
 
   const userColumns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -47,15 +56,21 @@ const UserListPage = () => {
         ),
         filterFn: "includesString",
       },
-      {
-        id: "email",
-        accessorKey: "email",
-        size: 260,
-        header: () => <p className="column-title">Email</p>,
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue<string>()}</span>
-        ),
-      },
+      ...(canViewEmail
+        ? [
+            {
+              id: "email",
+              accessorKey: "email",
+              size: 260,
+              header: () => <p className="column-title">Email</p>,
+              cell: ({ getValue }: CellContext<User, unknown>) => (
+                <span className="text-muted-foreground">
+                  {getValue<string>()}
+                </span>
+              ),
+            } satisfies ColumnDef<User>,
+          ]
+        : []),
       {
         id: "role",
         accessorKey: "role",
@@ -83,7 +98,7 @@ const UserListPage = () => {
         ),
       },
     ],
-    []
+    [canViewEmail]
   );
 
   const roleFilters =
@@ -143,7 +158,9 @@ const UserListPage = () => {
             <Search className="search-icon" />
             <Input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={
+                canViewEmail ? "Search by name or email..." : "Search by name..."
+              }
               className="pl-10 w-full"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}

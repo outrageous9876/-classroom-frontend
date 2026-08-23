@@ -17,7 +17,7 @@ const UserShowPage = () => {
   if (isLoading || isError || !user) {
     return (
       <ShowView>
-        <ShowViewHeader />
+        <ShowViewHeader canEdit={false} />
         <p className="state-message">
           {isLoading
             ? "Loading user details..."
@@ -31,7 +31,7 @@ const UserShowPage = () => {
 
   return (
     <ShowView>
-      <ShowViewHeader />
+      <ShowViewHeader canEdit={false} />
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
