@@ -92,6 +92,8 @@ const options: CreateDataProviderOptions = {
       const json: CreateResponse = await response.json();
       return json.data ?? {};
     },
+
+    transformError: buildHttpError,
   },
 
   update: {
@@ -102,6 +104,8 @@ const options: CreateDataProviderOptions = {
       const json: CreateResponse = await response.json();
       return json.data ?? {};
     },
+
+    transformError: buildHttpError,
   },
 
   getOne: {

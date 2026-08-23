@@ -9,10 +9,25 @@ import { Department } from "@/types";
 
 const DepartmentShowPage = () => {
   const {
-    query: { data, isLoading },
+    query: { data, isLoading, isError },
   } = useShow<Department>({ resource: "departments" });
 
   const department = data?.data;
+
+  if (isLoading || isError || !department) {
+    return (
+      <ShowView>
+        <ShowViewHeader />
+        <p className="state-message">
+          {isLoading
+            ? "Loading department details..."
+            : isError
+            ? "Failed to load department details."
+            : "Department not found."}
+        </p>
+      </ShowView>
+    );
+  }
 
   return (
     <ShowView>
@@ -20,32 +35,28 @@ const DepartmentShowPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{isLoading ? "Loading..." : department?.name}</CardTitle>
+          <CardTitle>{department.name}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {!isLoading && department && (
-            <>
-              <div className="flex items-center gap-2">
-                <Badge>{department.code}</Badge>
-                {department.totals && (
-                  <Badge variant="secondary">
-                    {department.totals.subjects} subjects
-                  </Badge>
-                )}
-              </div>
+          <div className="flex items-center gap-2">
+            <Badge>{department.code}</Badge>
+            {department.totals && (
+              <Badge variant="secondary">
+                {department.totals.subjects} subjects
+              </Badge>
+            )}
+          </div>
 
-              <Separator />
+          <Separator />
 
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">
-                  Description
-                </p>
-                <p className="text-sm">
-                  {department.description ?? "No description provided."}
-                </p>
-              </div>
-            </>
-          )}
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground">
+              Description
+            </p>
+            <p className="text-sm">
+              {department.description ?? "No description provided."}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </ShowView>

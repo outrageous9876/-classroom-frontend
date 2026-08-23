@@ -9,10 +9,25 @@ import { User } from "@/types";
 
 const UserShowPage = () => {
   const {
-    query: { data, isLoading },
+    query: { data, isLoading, isError },
   } = useShow<User>({ resource: "users" });
 
   const user = data?.data;
+
+  if (isLoading || isError || !user) {
+    return (
+      <ShowView>
+        <ShowViewHeader />
+        <p className="state-message">
+          {isLoading
+            ? "Loading user details..."
+            : isError
+            ? "Failed to load user details."
+            : "User not found."}
+        </p>
+      </ShowView>
+    );
+  }
 
   return (
     <ShowView>
@@ -20,42 +35,38 @@ const UserShowPage = () => {
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
-          {user?.image && (
+          {user.image && (
             <img
               src={user.image}
               alt={user.name}
               className="h-12 w-12 rounded-full object-cover"
             />
           )}
-          <CardTitle>{isLoading ? "Loading..." : user?.name}</CardTitle>
+          <CardTitle>{user.name}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {!isLoading && user && (
-            <>
-              <div className="flex items-center gap-2">
-                <Badge>{user.role}</Badge>
-              </div>
+          <div className="flex items-center gap-2">
+            <Badge>{user.role}</Badge>
+          </div>
 
-              <Separator />
+          <Separator />
 
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">
-                  Email
-                </p>
-                <p className="text-sm">{user.email}</p>
-              </div>
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground">
+              Email
+            </p>
+            <p className="text-sm">{user.email}</p>
+          </div>
 
-              {user.createdAt && (
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    Joined
-                  </p>
-                  <p className="text-sm">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </>
+          {user.createdAt && (
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground">
+                Joined
+              </p>
+              <p className="text-sm">
+                {new Date(user.createdAt).toLocaleDateString()}
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
