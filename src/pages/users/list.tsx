@@ -13,55 +13,59 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ListView } from "@/components/refine-ui/views/list-view";
-import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
-import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
-import { Subject } from "@/types";
-import { DEPARTMENT_OPTIONS } from "@/constants";
+import { User, UserRole } from "@/types";
 
-const SubjectListPage = () => {
+const ROLE_FILTER_OPTIONS = [
+  { value: UserRole.ADMIN, label: "Admin" },
+  { value: UserRole.TEACHER, label: "Teacher" },
+  { value: UserRole.STUDENT, label: "Student" },
+];
+
+const roleBadgeVariant = (role: UserRole) => {
+  if (role === UserRole.ADMIN) return "default";
+  if (role === UserRole.TEACHER) return "secondary";
+  return "outline";
+};
+
+const UserListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const [selectedRole, setSelectedRole] = useState<string>("all");
 
-  const subjectColumns = useMemo<ColumnDef<Subject>[]>(
+  const userColumns = useMemo<ColumnDef<User>[]>(
     () => [
-      {
-        id: "code",
-        accessorKey: "code",
-        size: 100,
-        header: () => <p className="column-title ml-2">Code</p>,
-        cell: ({ getValue }) => <Badge>{getValue<string>()}</Badge>,
-      },
       {
         id: "name",
         accessorKey: "name",
-        size: 200,
-        header: () => <p className="column-title">Name</p>,
+        size: 220,
+        header: () => <p className="column-title ml-2">Name</p>,
         cell: ({ getValue }) => (
-          <span className="text-foreground">{getValue<string>()}</span>
+          <span className="ml-2 text-foreground">{getValue<string>()}</span>
         ),
         filterFn: "includesString",
       },
       {
-        id: "department",
-        accessorKey: "department.name",
-        size: 150,
-        header: () => <p className="column-title">Department</p>,
+        id: "email",
+        accessorKey: "email",
+        size: 260,
+        header: () => <p className="column-title">Email</p>,
         cell: ({ getValue }) => (
-          <Badge variant="secondary">{getValue<string>()}</Badge>
+          <span className="text-muted-foreground">{getValue<string>()}</span>
         ),
       },
       {
-        id: "description",
-        accessorKey: "description",
-        size: 300,
-        header: () => <p className="column-title">Description</p>,
-        cell: ({ getValue }) => (
-          <span className="truncate line-clamp-2">{getValue<string>()}</span>
-        ),
+        id: "role",
+        accessorKey: "role",
+        size: 140,
+        header: () => <p className="column-title">Role</p>,
+        cell: ({ getValue }) => {
+          const role = getValue<UserRole>();
+
+          return <Badge variant={roleBadgeVariant(role)}>{role}</Badge>;
+        },
       },
       {
         id: "details",
@@ -69,7 +73,7 @@ const SubjectListPage = () => {
         header: () => <p className="column-title">Details</p>,
         cell: ({ row }) => (
           <ShowButton
-            resource="subjects"
+            resource="users"
             recordItemId={row.original.id}
             variant="outline"
             size="sm"
@@ -78,54 +82,42 @@ const SubjectListPage = () => {
           </ShowButton>
         ),
       },
-      {
-        id: "actions",
-        size: 140,
-        header: () => <p className="column-title">Actions</p>,
-        cell: ({ row }) => (
-          <DeleteButton
-            resource="subjects"
-            recordItemId={row.original.id}
-            size="sm"
-          />
-        ),
-      },
     ],
     []
   );
 
-  const departmentFilters =
-    selectedDepartment === "all"
+  const roleFilters =
+    selectedRole === "all"
       ? []
       : [
           {
-            field: "department",
+            field: "role",
             operator: "eq" as const,
-            value: selectedDepartment,
+            value: selectedRole,
           },
         ];
 
   const searchFilters = searchQuery
     ? [
         {
-          field: "name",
+          field: "search",
           operator: "contains" as const,
           value: searchQuery,
         },
       ]
     : [];
 
-  const subjectTable = useTable<Subject>({
-    columns: subjectColumns,
+  const userTable = useTable<User>({
+    columns: userColumns,
     refineCoreProps: {
-      resource: "subjects",
+      resource: "users",
       pagination: {
         pageSize: 10,
         mode: "server",
       },
       filters: {
         // Compose refine filters from the current UI selections.
-        permanent: [...departmentFilters, ...searchFilters],
+        permanent: [...roleFilters, ...searchFilters],
       },
       sorters: {
         initial: [
@@ -141,7 +133,7 @@ const SubjectListPage = () => {
   return (
     <ListView>
       <Breadcrumb />
-      <h1 className="page-title">Subjects</h1>
+      <h1 className="page-title">Faculty & Users</h1>
 
       <div className="intro-row">
         <p>Quick access to essential metrics and management tools.</p>
@@ -151,7 +143,7 @@ const SubjectListPage = () => {
             <Search className="search-icon" />
             <Input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search by name or email..."
               className="pl-10 w-full"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -159,32 +151,27 @@ const SubjectListPage = () => {
           </div>
 
           <div className="flex gap-2 w-full sm:w-auto">
-            <Select
-              value={selectedDepartment}
-              onValueChange={setSelectedDepartment}
-            >
-              <SelectTrigger className="">
-                <SelectValue placeholder="Filter by department" />
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {DEPARTMENT_OPTIONS.map((department) => (
-                  <SelectItem key={department.value} value={department.value}>
-                    {department.label}
+                <SelectItem value="all">All Roles</SelectItem>
+                {ROLE_FILTER_OPTIONS.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
-            <CreateButton resource="subjects" />
           </div>
         </div>
       </div>
 
-      <DataTable table={subjectTable} />
+      <DataTable table={userTable} />
     </ListView>
   );
 };
 
-export default SubjectListPage;
+export default UserListPage;

@@ -3,13 +3,6 @@ import { useMemo, useState } from "react";
 import { useTable } from "@refinedev/react-table";
 import { ColumnDef } from "@tanstack/react-table";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ListView } from "@/components/refine-ui/views/list-view";
@@ -19,14 +12,12 @@ import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
 import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
-import { Subject } from "@/types";
-import { DEPARTMENT_OPTIONS } from "@/constants";
+import { Department } from "@/types";
 
-const SubjectListPage = () => {
+const DepartmentListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
 
-  const subjectColumns = useMemo<ColumnDef<Subject>[]>(
+  const departmentColumns = useMemo<ColumnDef<Department>[]>(
     () => [
       {
         id: "code",
@@ -38,21 +29,12 @@ const SubjectListPage = () => {
       {
         id: "name",
         accessorKey: "name",
-        size: 200,
+        size: 220,
         header: () => <p className="column-title">Name</p>,
         cell: ({ getValue }) => (
           <span className="text-foreground">{getValue<string>()}</span>
         ),
         filterFn: "includesString",
-      },
-      {
-        id: "department",
-        accessorKey: "department.name",
-        size: 150,
-        header: () => <p className="column-title">Department</p>,
-        cell: ({ getValue }) => (
-          <Badge variant="secondary">{getValue<string>()}</Badge>
-        ),
       },
       {
         id: "description",
@@ -69,7 +51,7 @@ const SubjectListPage = () => {
         header: () => <p className="column-title">Details</p>,
         cell: ({ row }) => (
           <ShowButton
-            resource="subjects"
+            resource="departments"
             recordItemId={row.original.id}
             variant="outline"
             size="sm"
@@ -84,7 +66,7 @@ const SubjectListPage = () => {
         header: () => <p className="column-title">Actions</p>,
         cell: ({ row }) => (
           <DeleteButton
-            resource="subjects"
+            resource="departments"
             recordItemId={row.original.id}
             size="sm"
           />
@@ -93,17 +75,6 @@ const SubjectListPage = () => {
     ],
     []
   );
-
-  const departmentFilters =
-    selectedDepartment === "all"
-      ? []
-      : [
-          {
-            field: "department",
-            operator: "eq" as const,
-            value: selectedDepartment,
-          },
-        ];
 
   const searchFilters = searchQuery
     ? [
@@ -115,17 +86,17 @@ const SubjectListPage = () => {
       ]
     : [];
 
-  const subjectTable = useTable<Subject>({
-    columns: subjectColumns,
+  const departmentTable = useTable<Department>({
+    columns: departmentColumns,
     refineCoreProps: {
-      resource: "subjects",
+      resource: "departments",
       pagination: {
         pageSize: 10,
         mode: "server",
       },
       filters: {
         // Compose refine filters from the current UI selections.
-        permanent: [...departmentFilters, ...searchFilters],
+        permanent: [...searchFilters],
       },
       sorters: {
         initial: [
@@ -141,7 +112,7 @@ const SubjectListPage = () => {
   return (
     <ListView>
       <Breadcrumb />
-      <h1 className="page-title">Subjects</h1>
+      <h1 className="page-title">Departments</h1>
 
       <div className="intro-row">
         <p>Quick access to essential metrics and management tools.</p>
@@ -159,32 +130,14 @@ const SubjectListPage = () => {
           </div>
 
           <div className="flex gap-2 w-full sm:w-auto">
-            <Select
-              value={selectedDepartment}
-              onValueChange={setSelectedDepartment}
-            >
-              <SelectTrigger className="">
-                <SelectValue placeholder="Filter by department" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {DEPARTMENT_OPTIONS.map((department) => (
-                  <SelectItem key={department.value} value={department.value}>
-                    {department.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <CreateButton resource="subjects" />
+            <CreateButton resource="departments" />
           </div>
         </div>
       </div>
 
-      <DataTable table={subjectTable} />
+      <DataTable table={departmentTable} />
     </ListView>
   );
 };
 
-export default SubjectListPage;
+export default DepartmentListPage;

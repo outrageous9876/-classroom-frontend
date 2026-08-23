@@ -18,6 +18,7 @@ import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
+import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
 import { Subject, User } from "@/types";
 
@@ -139,6 +140,18 @@ const ClassesList = () => {
           >
             View
           </ShowButton>
+        ),
+      },
+      {
+        id: "actions",
+        size: 140,
+        header: () => <p className="column-title">Actions</p>,
+        cell: ({ row }) => (
+          <DeleteButton
+            resource="classes"
+            recordItemId={row.original.id}
+            size="sm"
+          />
         ),
       },
     ],

@@ -20,14 +20,20 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
 import { InputPassword } from "@/components/refine-ui/form/input-password";
 import { cn } from "@/lib/utils";
+import { UserRole } from "@/types";
 
 export const SignUpForm = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
 
   const { open } = useNotification();
 
@@ -55,6 +61,7 @@ export const SignUpForm = () => {
       name,
       email,
       password,
+      role,
     });
   };
 
@@ -116,6 +123,27 @@ export const SignUpForm = () => {
         <CardContent className={cn("px-0")}>
           <form onSubmit={handleSignUp}>
             <div className={cn("flex", "flex-col", "gap-2")}>
+              <Label htmlFor="role">I am a</Label>
+              <ToggleGroup
+                id="role"
+                type="single"
+                variant="outline"
+                value={role}
+                onValueChange={(value) => {
+                  if (value) setRole(value as UserRole);
+                }}
+                className={cn("w-full")}
+              >
+                <ToggleGroupItem value={UserRole.STUDENT}>
+                  Student
+                </ToggleGroupItem>
+                <ToggleGroupItem value={UserRole.TEACHER}>
+                  Teacher
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className={cn("flex", "flex-col", "gap-2", "mt-6")}>
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"

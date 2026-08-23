@@ -23,17 +23,18 @@ import {
 
 import { CreateView } from "@/components/refine-ui/views/create-view";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
-
+import { useBack, useList, useNotification } from "@refinedev/core";
 import { Textarea } from "@/components/ui/textarea";
-import { useBack, useList } from "@refinedev/core";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { classSchema } from "@/lib/schema";
 import UploadWidget from "@/components/upload-widget";
+import { useGenerateDescription } from "@/hooks/use-generate-description";
 import z from "zod";
-
 
 const ClassesCreate = () => {
   const back = useBack();
+  const { open } = useNotification();
+  const { generateDescription, isGenerating } = useGenerateDescription();
 
   const form = useForm({
     resolver: zodResolver(classSchema),
@@ -57,7 +58,16 @@ const ClassesCreate = () => {
 
   const onSubmit = async (values: z.infer<typeof classSchema>) => {
     try {
-      await onFinish(values);
+      const result = await onFinish(values);
+      const inviteCode = (result as any)?.data?.inviteCode;
+
+      if (inviteCode) {
+        open?.({
+          type: "success",
+          message: "Class created!",
+          description: `Invite code: ${inviteCode} — share this with your students.`,
+        });
+      }
     } catch (error) {
       console.error("Error creating class:", error);
     }
@@ -91,6 +101,26 @@ const ClassesCreate = () => {
 
   const subjects = subjectsQuery.data?.data || [];
   const subjectsLoading = subjectsQuery.isLoading;
+
+  const selectedSubjectId = form.watch("subjectId");
+  const selectedSubject = subjects.find(
+    (subject) => subject.id === selectedSubjectId
+  );
+
+  const handleGenerateDescription = async () => {
+    const description = await generateDescription({
+      type: "class",
+      name: form.getValues("name") ?? "",
+      context: selectedSubject?.name,
+    });
+
+    if (description) {
+      form.setValue("description", description, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
 
   return (
     <CreateView className="class-view">
@@ -312,9 +342,26 @@ const ClassesCreate = () => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Description <span className="text-orange-600">*</span>
-                      </FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>
+                          Description{" "}
+                          <span className="text-orange-600">*</span>
+                        </FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleGenerateDescription}
+                          disabled={isGenerating}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3.5 w-3.5" />
+                          )}
+                          Generate with AI ✨
+                        </Button>
+                      </div>
                       <FormControl>
                         <Textarea
                           placeholder="Brief description about the class"
